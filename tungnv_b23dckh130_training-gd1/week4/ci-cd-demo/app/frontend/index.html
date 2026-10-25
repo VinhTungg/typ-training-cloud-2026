@@ -111,28 +111,35 @@
             </div>
             <div class="stage-connector"></div>
             <div class="stage-item completed">
-              <div class="stage-badge">3</div>
+              <div class="stage-badge">2</div>
               <div class="stage-title">Docker Build</div>
               <div class="stage-desc">Đóng gói Image đa tầng</div>
               <span class="stage-tag success">BUILT</span>
             </div>
             <div class="stage-connector"></div>
             <div class="stage-item completed">
-              <div class="stage-badge">5</div>
+              <div class="stage-badge">3</div>
+              <div class="stage-title">CI Health Check</div>
+              <div class="stage-desc">Test tại chỗ trước khi Push</div>
+              <span class="stage-tag success">PASSED</span>
+            </div>
+            <div class="stage-connector"></div>
+            <div class="stage-item completed">
+              <div class="stage-badge">4</div>
               <div class="stage-title">Docker Hub Push</div>
               <div class="stage-desc">Đẩy Image lên Registry</div>
               <span class="stage-tag success">PUSHED</span>
             </div>
             <div class="stage-connector"></div>
             <div class="stage-item completed">
-              <div class="stage-badge">6</div>
-              <div class="stage-title">Ansible Deploy</div>
+              <div class="stage-badge">5</div>
+              <div class="stage-title">Deploy Target VM</div>
               <div class="stage-desc">SSH triển khai Target VM</div>
               <span class="stage-tag success">DEPLOYED</span>
             </div>
             <div class="stage-connector"></div>
             <div class="stage-item completed">
-              <div class="stage-badge">7</div>
+              <div class="stage-badge">6</div>
               <div class="stage-title">Smoke Test</div>
               <div class="stage-desc">Kiểm tra HTTP /healthz</div>
               <span class="stage-tag success">HTTP 200</span>
