@@ -4,10 +4,12 @@ pipeline {
         timestamps()
         disableConcurrentBuilds()
     }
+    triggers {
+        pollSCM('* * * * *')  // Tu dong quet GitHub moi 1 phut (Auto Build khi git push)
+    }
     environment {
         DOCKER_HUB_USER = 'vinhtung'  // Docker Hub username của bạn
         IMAGE_NAME      = "${DOCKER_HUB_USER}/docker-cloud-demo"
-        IMAGE_TAG       = "${BUILD_NUMBER}"
         DOCKER_CONFIG   = "${WORKSPACE}/.docker-auth"
         TARGET_VM_IP    = '10.97.0.118'  // IP thực tế của Target VM
         APP_DIR         = 'tungnv_b23dckh130_training-gd1/week4/ci-cd-demo'
@@ -16,51 +18,60 @@ pipeline {
     stages {
         stage('1. Checkout') {
             steps {
-                echo '=== 1. Kiem tra ma nguon tu Git Repository ==='
+                echo '=== 1. Kiem tra va lay ma nguon cung Git Tags tu Repository ==='
                 checkout scm
+                sh 'git fetch --tags || true'
             }
         }
         stage('2. Docker Build') {
             steps {
-                echo "=== 2. Dong goi anh Docker phien ban ${IMAGE_TAG} ==="
                 script {
+                    // Kiem tra commit co duoc gan Git Tag (vd: v1.1.0) hay khong
+                    def gitTag = sh(script: 'git describe --tags --exact-match 2>/dev/null || echo ""', returnStdout: true).trim()
+                    if (gitTag != '') {
+                        env.IMAGE_TAG = gitTag
+                    } else {
+                        env.IMAGE_TAG = "v1.0.${BUILD_NUMBER}"
+                    }
+                    echo "=== AP DUNG PHIEN BAN TAG: ${env.IMAGE_TAG} ==="
+
                     def targetDir = fileExists(env.APP_DIR) ? env.APP_DIR : '.'
                     dir(targetDir) {
-                        sh '''
+                        sh """
                             docker build \
-                              -t "$IMAGE_NAME:$IMAGE_TAG" \
+                              -t "$IMAGE_NAME:${env.IMAGE_TAG}" \
                               -t "$IMAGE_NAME:latest" \
                               -f app/Dockerfile app/
-                        '''
+                        """
                     }
                 }
             }
         }
         stage('3. Docker Hub Push') {
             steps {
-                echo '=== 3. Dang nhap va day anh len Docker Hub Registry ==='
+                echo "=== 3. Dang nhap va day anh len Docker Hub (Tag: ${env.IMAGE_TAG}) ==="
                 withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', usernameVariable: 'DH_USER', passwordVariable: 'DH_TOKEN')]) {
-                    sh '''
+                    sh """
                         set -eu
                         mkdir -p "$DOCKER_CONFIG"
                         echo "$DH_TOKEN" | docker login -u "$DH_USER" --password-stdin
-                        docker push "$IMAGE_NAME:$IMAGE_TAG"
+                        docker push "$IMAGE_NAME:${env.IMAGE_TAG}"
                         docker push "$IMAGE_NAME:latest"
                         docker logout || true
-                    '''
+                    """
                 }
             }
         }
         stage('4. Deploy') {
             steps {
-                echo "=== 4. Trien khai Container len Target VM (${TARGET_VM_IP}) qua SSH ==="
+                echo "=== 4. Trien khai Container len Target VM (${TARGET_VM_IP}) voi Tag ${env.IMAGE_TAG} ==="
                 sshagent(credentials: ['target-vm-ssh-key']) {
                     sh """
                         ssh -o StrictHostKeyChecking=accept-new ubuntu@${TARGET_VM_IP} '
-                            sudo docker pull ${IMAGE_NAME}:${IMAGE_TAG}
+                            sudo docker pull ${IMAGE_NAME}:${env.IMAGE_TAG}
                             sudo docker stop typ-web-app 2>/dev/null || true
                             sudo docker rm typ-web-app 2>/dev/null || true
-                            sudo docker run -d --name typ-web-app --restart unless-stopped -p 3000:3000 ${IMAGE_NAME}:${IMAGE_TAG}
+                            sudo docker run -d --name typ-web-app --restart unless-stopped -p 3000:3000 -e APP_VERSION=${env.IMAGE_TAG} ${IMAGE_NAME}:${env.IMAGE_TAG}
                         '
                     """
                 }
@@ -79,7 +90,7 @@ pipeline {
             sh 'rm -rf "$DOCKER_CONFIG" || true'
         }
         success {
-            echo '=== CI/CD THANH CONG: Ung dung da duoc build, push va deploy len Target VM thanh cong! ==='
+            echo "=== CI/CD THANH CONG: Phien ban ${env.IMAGE_TAG} da duoc build, push va deploy len Target VM! ==="
         }
         failure {
             echo '=== CI/CD THAT BAI: Vui long kiem tra Console Output ==='
