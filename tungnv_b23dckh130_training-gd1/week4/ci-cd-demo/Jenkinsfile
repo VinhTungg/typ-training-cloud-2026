@@ -5,13 +5,13 @@ pipeline {
         disableConcurrentBuilds()
     }
     triggers {
-        pollSCM('* * * * *')  // Tu dong quet GitHub moi 1 phut (Auto Build khi git push)
+        pollSCM('* * * * *')
     }
     environment {
-        DOCKER_HUB_USER = 'vinhtung'  // Docker Hub username của bạn
+        DOCKER_HUB_USER = 'vinhtung'
         IMAGE_NAME      = "${DOCKER_HUB_USER}/docker-cloud-demo"
         DOCKER_CONFIG   = "${WORKSPACE}/.docker-auth"
-        TARGET_VM_IP    = '10.97.0.118'  // IP thực tế của Target VM
+        TARGET_VM_IP    = '10.97.0.118' 
         APP_DIR         = 'tungnv_b23dckh130_training-gd1/week4/ci-cd-demo'
         DOCKER_BUILDKIT = '1'
     }
