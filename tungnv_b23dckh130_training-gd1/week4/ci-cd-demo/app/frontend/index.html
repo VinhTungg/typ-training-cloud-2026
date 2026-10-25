@@ -1,12 +1,15 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DevOps Dashboard - Nguyễn Vĩnh Tùng B23DCKH130</title>
   <link rel="stylesheet" href="css/style.css">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
 </head>
+
 <body>
   <div class="app-container">
     <!-- Header -->
@@ -14,7 +17,7 @@
       <div class="header-brand">
         <div class="logo-badge">
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>
+            <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" />
           </svg>
         </div>
         <div>
@@ -96,7 +99,7 @@
       <section class="card card-pipeline full-width">
         <div class="card-header">
           <div class="card-icon">🔄</div>
-          <h2>Luồng Triển Khai CI/CD Pipeline (7 Stages)</h2>
+          <h2>Luồng Triển Khai CI/CD Pipeline</h2>
         </div>
         <div class="card-body">
           <div class="pipeline-flow">
@@ -108,24 +111,10 @@
             </div>
             <div class="stage-connector"></div>
             <div class="stage-item completed">
-              <div class="stage-badge">2</div>
-              <div class="stage-title">Gitleaks Scan</div>
-              <div class="stage-desc">Quét rò rỉ secret</div>
-              <span class="stage-tag success">0 SECRETS</span>
-            </div>
-            <div class="stage-connector"></div>
-            <div class="stage-item completed">
               <div class="stage-badge">3</div>
               <div class="stage-title">Docker Build</div>
               <div class="stage-desc">Đóng gói Image đa tầng</div>
               <span class="stage-tag success">BUILT</span>
-            </div>
-            <div class="stage-connector"></div>
-            <div class="stage-item completed">
-              <div class="stage-badge">4</div>
-              <div class="stage-title">Trivy Gate</div>
-              <div class="stage-desc">Quét lỗ hổng Image</div>
-              <span class="stage-tag success">PASSED</span>
             </div>
             <div class="stage-connector"></div>
             <div class="stage-item completed">
@@ -190,4 +179,5 @@
 
   <script src="js/app.js"></script>
 </body>
+
 </html>
