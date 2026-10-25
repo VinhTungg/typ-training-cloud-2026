@@ -11,6 +11,7 @@ pipeline {
         DOCKER_CONFIG   = "${WORKSPACE}/.docker-auth"
         TARGET_VM_IP    = '10.97.0.118'  // IP thực tế của Target VM
         APP_DIR         = 'tungnv_b23dckh130_training-gd1/week4/ci-cd-demo'
+        DOCKER_BUILDKIT = '1'
     }
     stages {
         stage('1. Checkout') {
