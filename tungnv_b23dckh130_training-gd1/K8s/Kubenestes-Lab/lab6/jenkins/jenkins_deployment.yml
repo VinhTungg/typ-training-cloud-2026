@@ -13,9 +13,18 @@ spec:
       labels:
         app: jenkins
     spec:
+      hostAliases:
+        - ip: "128.24.70.119"
+          hostnames:
+            - "updates.jenkins.io"
+            - "mirrors.jenkins.io"
       containers:
         - name: jenkins
           image: jenkins/jenkins:lts
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: JAVA_OPTS
+              value: "-Djava.net.preferIPv4Stack=true -Djava.awt.headless=true"
           ports:
             - containerPort: 8080
             - containerPort: 50000
