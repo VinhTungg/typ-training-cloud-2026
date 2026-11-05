@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>K8s Lab 5 - 3-Tier Microservices Architecture</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --success: #16a34a;
+      --danger: #dc2626;
+      --warning: #f59e0b;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #1e293b;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      padding: 24px;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    header {
+      background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+      color: white;
+      padding: 24px 32px;
+      border-radius: 12px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    header h1 {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .badge-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .badge {
+      background-color: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(4px);
+      padding: 6px 14px;
+      border-radius: 9999px;
+      font-size: 14px;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Status Grid */
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 18px;
+      margin-bottom: 24px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      padding: 20px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .indicator {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background-color: var(--text-muted);
+    }
+
+    .indicator.online {
+      background-color: var(--success);
+      box-shadow: 0 0 8px var(--success);
+    }
+
+    .indicator.offline {
+      background-color: var(--danger);
+      box-shadow: 0 0 8px var(--danger);
+    }
+
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+
+    .detail-label {
+      color: var(--text-muted);
+    }
+
+    .detail-value {
+      font-family: monospace;
+      font-weight: 600;
+      background: #f1f5f9;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    /* Interactive Section */
+    .section-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 6px;
+      color: var(--text);
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input:focus, textarea:focus {
+      border-color: var(--primary);
+    }
+
+    button {
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    button:hover {
+      background-color: var(--primary-hover);
+    }
+
+    button.btn-refresh {
+      background-color: #475569;
+    }
+
+    button.btn-refresh:hover {
+      background-color: #334155;
+    }
+
+    button.btn-delete {
+      background-color: transparent;
+      color: var(--danger);
+      padding: 4px 8px;
+      font-size: 12px;
+      border: 1px solid var(--danger);
+    }
+
+    button.btn-delete:hover {
+      background-color: var(--danger);
+      color: white;
+    }
+
+    /* Table */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      font-size: 14px;
+    }
+
+    th, td {
+      padding: 12px 14px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    th {
+      background-color: #f8fafc;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    tr:hover {
+      background-color: #f1f5f9;
+    }
+
+    /* Alert */
+    .alert {
+      padding: 12px 16px;
+      border-radius: 6px;
+      margin-bottom: 16px;
+      font-size: 14px;
+      display: none;
+    }
+
+    .alert.success {
+      background-color: #dcfce7;
+      color: #166534;
+      border: 1px solid #bbf7d0;
+      display: block;
+    }
+
+    .alert.error {
+      background-color: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fecaca;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <h1>☸️ Kubernetes Lab 5: 3-Tier Microservices Architecture</h1>
+      <p>Hệ thống vi dịch vụ 3 tầng phân tán hoạt động trong Namespace: <strong>lab5</strong></p>
+      <div class="badge-container">
+        <span class="badge">👤 Sinh viên: Nguyễn Vĩnh Tùng</span>
+        <span class="badge">🆔 MSV: B23DCKH130</span>
+        <span class="badge">☁️ TYP Cloud Training 2026</span>
+        <span class="badge">🏢 Giai đoạn 1 (training-gd1)</span>
+      </div>
+    </header>
+
+    <!-- 3-Tier Health Cards -->
+    <div class="status-grid">
+      <!-- Tier 1: Frontend -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">🖥️ Tier 1: Frontend UI</span>
+          <span class="indicator online" id="front-indicator"></span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Service Type:</span>
+          <span class="detail-value">NodePort (:30080)</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Frontend Pod:</span>
+          <span class="detail-value" id="front-pod">Đang tải...</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Proxy Endpoint:</span>
+          <span class="detail-value" id="front-backend-url">backend-service:5000</span>
+        </div>
+      </div>
+
+      <!-- Tier 2: Backend -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">⚙️ Tier 2: Backend API</span>
+          <span class="indicator" id="back-indicator"></span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Service Type:</span>
+          <span class="detail-value">ClusterIP (:5000)</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Backend Pod:</span>
+          <span class="detail-value" id="back-pod">Đang kiểm tra...</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Trạng thái:</span>
+          <span class="detail-value" id="back-status">Checking...</span>
+        </div>
+      </div>
+
+      <!-- Tier 3: Database -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">🗄️ Tier 3: MySQL Database</span>
+          <span class="indicator" id="db-indicator"></span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Service Type:</span>
+          <span class="detail-value">ClusterIP (:3306)</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">K8s Storage:</span>
+          <span class="detail-value">PV + PVC Bound (2Gi)</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Trạng thái kết nối:</span>
+          <span class="detail-value" id="db-status">Checking...</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Alert Box -->
+    <div id="alert-box" class="alert"></div>
+
+    <!-- Live Data & Interactive Verification Form -->
+    <div class="card" style="margin-bottom: 24px;">
+      <div class="section-title">
+        <span>📝 Thêm dữ liệu kiểm chứng luồng Frontend → Backend → MySQL</span>
+      </div>
+      <form id="msg-form" onsubmit="handleSendMessage(event)">
+        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 14px;">
+          <div class="form-group">
+            <label for="author">Tác giả (Author):</label>
+            <input type="text" id="author" value="Nguyễn Vĩnh Tùng (B23DCKH130)" required>
+          </div>
+          <div class="form-group">
+            <label for="content">Nội dung ghi chú / Test Message:</label>
+            <input type="text" id="content" placeholder="Nhập tin nhắn kiểm thử..." required>
+          </div>
+        </div>
+        <button type="submit">💾 Lưu trực tiếp vào MySQL Database</button>
+      </form>
+    </div>
+
+    <!-- Real-time Database Records Table -->
+    <div class="card">
+      <div class="section-title">
+        <span>📊 Dữ liệu trực tiếp từ MySQL Database (Query qua REST API)</span>
+        <button class="btn-refresh" onclick="fetchMessages()">🔄 Làm mới dữ liệu</button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 60px;">ID</th>
+            <th style="width: 240px;">Tác giả</th>
+            <th>Nội dung</th>
+            <th style="width: 180px;">Thời gian lưu DB</th>
+            <th style="width: 80px;">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody id="messages-table-body">
+          <tr>
+            <td colspan="5" style="text-align: center; color: var(--text-muted);">Đang tải dữ liệu từ database...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const alertBox = document.getElementById('alert-box');
+
+    function showAlert(message, isError = false) {
+      alertBox.textContent = message;
+      alertBox.className = isError ? 'alert error' : 'alert success';
+      setTimeout(() => {
+        alertBox.className = 'alert';
+      }, 5000);
+    }
+
+    async function loadStatus() {
+      // 1. Frontend status
+      try {
+        const fRes = await fetch('/api/frontend-status');
+        const fData = await fRes.json();
+        document.getElementById('front-pod').textContent = fData.podName;
+        document.getElementById('front-backend-url').textContent = fData.backendUrl;
+        document.getElementById('front-indicator').className = 'indicator online';
+      } catch (e) {
+        document.getElementById('front-pod').textContent = 'Lỗi kết nối';
+      }
+
+      // 2. Backend & DB Health
+      try {
+        const bRes = await fetch('/api/health');
+        const bData = await bRes.json();
+        
+        // Backend UI
+        document.getElementById('back-pod').textContent = bData.podName || 'N/A';
+        document.getElementById('back-status').textContent = bData.status;
+        document.getElementById('back-indicator').className = bData.status === 'HEALTHY' ? 'indicator online' : 'indicator offline';
+
+        // DB UI
+        const dbStatus = bData.database ? bData.database.status : 'UNKNOWN';
+        document.getElementById('db-status').textContent = dbStatus;
+        document.getElementById('db-indicator').className = dbStatus === 'CONNECTED' ? 'indicator online' : 'indicator offline';
+      } catch (e) {
+        document.getElementById('back-pod').textContent = 'Không phản hồi';
+        document.getElementById('back-status').textContent = 'DOWN';
+        document.getElementById('back-indicator').className = 'indicator offline';
+        document.getElementById('db-status').textContent = 'UNREACHABLE';
+        document.getElementById('db-indicator').className = 'indicator offline';
+      }
+    }
+
+    async function fetchMessages() {
+      const tbody = document.getElementById('messages-table-body');
+      try {
+        const res = await fetch('/api/messages');
+        const data = await res.json();
+
+        if (!Array.isArray(data) || data.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">Chưa có bản ghi nào trong Database.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = data.map(msg => `
+          <tr>
+            <td><strong>#${msg.id}</strong></td>
+            <td><strong>${escapeHtml(msg.author)}</strong></td>
+            <td>${escapeHtml(msg.content)}</td>
+            <td>${new Date(msg.created_at).toLocaleString('vi-VN')}</td>
+            <td>
+              <button class="btn-delete" onclick="handleDeleteMessage(${msg.id})">Xóa</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--danger);">Lỗi tải dữ liệu: ${e.message}</td></tr>`;
+      }
+    }
+
+    async function handleSendMessage(e) {
+      e.preventDefault();
+      const author = document.getElementById('author').value.trim();
+      const content = document.getElementById('content').value.trim();
+
+      if (!author || !content) return;
+
+      try {
+        const res = await fetch('/api/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ author, content })
+        });
+        const result = await res.json();
+        if (res.ok) {
+          showAlert('✅ Dữ liệu đã được Backend ghi thành công vào MySQL Database!');
+          document.getElementById('content').value = '';
+          fetchMessages();
+        } else {
+          showAlert(`❌ Lỗi ghi dữ liệu: ${result.error}`, true);
+        }
+      } catch (err) {
+        showAlert(`❌ Không thể gửi yêu cầu: ${err.message}`, true);
+      }
+    }
+
+    async function handleDeleteMessage(id) {
+      if (!confirm(`Bạn có chắc chắn muốn xóa bản ghi #${id}?`)) return;
+      try {
+        const res = await fetch(`/api/messages/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+          showAlert(`✅ Đã xóa bản ghi #${id} khỏi MySQL Database!`);
+          fetchMessages();
+        } else {
+          showAlert('❌ Xóa thất bại', true);
+        }
+      } catch (err) {
+        showAlert(`❌ Lỗi kết nối: ${err.message}`, true);
+      }
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/[&<>'"]/g, 
+        tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+      );
+    }
+
+    // Khởi tạo
+    loadStatus();
+    fetchMessages();
+    setInterval(loadStatus, 5000);
+  </script>
+</body>
+</html>
+

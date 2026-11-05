@@ -1,0 +1,14 @@
+{
+  "name": "lab5-frontend",
+  "version": "1.0.0",
+  "description": "Lab 5 Frontend Web UI for Kubernetes 3-Tier Microservices",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "axios": "^1.7.2",
+    "express": "^4.19.2"
+  }
+}
+

@@ -1,0 +1,34 @@
+pipeline {
+  agent any
+
+  triggers {
+    pollSCM('* * * * *')
+  }
+
+  stages {
+    stage('1. Checkout Code') {
+      steps {
+        echo '=== 1. Dang lay ma nguon tu GitHub Repository ==='
+        git branch: 'main', url: 'https://github.com/VinhTungg/typ-training-cloud-2026.git'
+      }
+    }
+
+    stage('2. Install Dependencies') {
+      steps {
+        echo '=== 2. Cai dat cac thu vien Node.js (npm install) ==='
+        dir('tungnv_b23dckh130_training-gd1/K8s/Kubenestes-Lab/lab6/sample') {
+          sh 'npm install'
+        }
+      }
+    }
+
+    stage('3. Run Unit Tests') {
+      steps {
+        echo '=== 3. Chay kiem thu tu dong Jest (npm test) ==='
+        dir('tungnv_b23dckh130_training-gd1/K8s/Kubenestes-Lab/lab6/sample') {
+          sh 'npm test'
+        }
+      }
+    }
+  }
+}
