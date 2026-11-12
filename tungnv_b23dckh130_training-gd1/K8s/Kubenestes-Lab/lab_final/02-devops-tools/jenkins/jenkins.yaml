@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jenkins
+  namespace: jenkins
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jenkins
+  template:
+    metadata:
+      labels:
+        app: jenkins
+    spec:
+      securityContext:
+        runAsUser: 0
+      containers:
+        - name: jenkins
+          image: jenkins/jenkins:lts
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true
+          env:
+            - name: JAVA_OPTS
+              value: "-Djava.net.preferIPv4Stack=true"
+          ports:
+            - name: http-port
+              containerPort: 8080
+            - name: jnlp-port
+              containerPort: 50000
+          volumeMounts:
+            - name: jenkins-data
+              mountPath: /var/jenkins_home
+            - name: containerd-sock
+              mountPath: /run/containerd/containerd.sock
+            - name: buildkit-dir
+              mountPath: /run/buildkit
+            - name: nerdctl-bin
+              mountPath: /usr/local/bin/nerdctl
+            - name: buildctl-bin
+              mountPath: /usr/local/bin/buildctl
+            - name: docker-bin
+              mountPath: /usr/local/bin/docker
+      volumes:
+        - name: jenkins-data
+          persistentVolumeClaim:
+            claimName: jenkins-pvc
+        - name: containerd-sock
+          hostPath:
+            path: /run/containerd/containerd.sock
+        - name: buildkit-dir
+          hostPath:
+            path: /run/buildkit
+        - name: nerdctl-bin
+          hostPath:
+            path: /usr/local/bin/nerdctl
+        - name: buildctl-bin
+          hostPath:
+            path: /usr/local/bin/buildctl
+        - name: docker-bin
+          hostPath:
+            path: /usr/local/bin/docker-pod
