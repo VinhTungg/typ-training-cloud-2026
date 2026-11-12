@@ -1,0 +1,116 @@
+pipeline {
+    agent any
+
+    parameters {
+        string(name: 'IMAGE_TAG', defaultValue: '', description: 'Git Tag de build (De trong se tu dong lay Git Tag moi nhat tren repo)')
+    }
+
+    environment {
+        DOCKER_API_REPO = 'vinhtung/cloud-final-api'
+        DOCKER_WEB_REPO = 'vinhtung/cloud-final-web'
+        GIT_REPO_HTTPS  = 'https://github.com/VinhTungg/typ-training-cloud-2026.git'
+        GIT_REPO_SSH    = 'git@github.com:VinhTungg/typ-training-cloud-2026.git'
+        APP_DIR         = 'tungnv_b23dckh130_training-gd1/K8s/Kubenestes-Lab/lab_final/03-app-repo'
+        CONFIG_FILE     = 'tungnv_b23dckh130_training-gd1/K8s/Kubenestes-Lab/lab_final/04-config-repo/values.yaml'
+    }
+
+    stages {
+        stage('Checkout & Detect Tag') {
+            steps {
+                sh '''
+                    rm -rf repo-workspace
+                    git clone ${GIT_REPO_HTTPS} repo-workspace
+                    cd repo-workspace
+                    git fetch --tags --force
+                '''
+                script {
+                    def detectedTag = params.IMAGE_TAG?.trim()
+                    if (!detectedTag) {
+                        detectedTag = sh(
+                            script: "cd repo-workspace && (git tag --sort=-creatordate | head -n 1)",
+                            returnStdout: true
+                        ).trim()
+                    }
+                    if (!detectedTag) {
+                        detectedTag = "v1.0.1"
+                    }
+                    env.BUILD_TAG_VERSION = detectedTag
+                    echo "=== Building version from Git Tag: ${env.BUILD_TAG_VERSION} ==="
+                }
+                sh '''
+                    cd repo-workspace
+                    git checkout ${BUILD_TAG_VERSION} || git checkout main
+                '''
+            }
+        }
+
+        stage('Build Docker Images') {
+            steps {
+                sh '''
+                    echo "=== Building API Service Image: ${DOCKER_API_REPO}:${BUILD_TAG_VERSION} ==="
+                    cd repo-workspace/${APP_DIR}/api-service
+                    docker build -t ${DOCKER_API_REPO}:${BUILD_TAG_VERSION} .
+
+                    echo "=== Building Web App Image: ${DOCKER_WEB_REPO}:${BUILD_TAG_VERSION} ==="
+                    cd ../web-app
+                    docker build -t ${DOCKER_WEB_REPO}:${BUILD_TAG_VERSION} .
+
+                    docker images | grep cloud-final || true
+                '''
+            }
+        }
+
+        stage('Push to Docker Hub') {
+            steps {
+                script {
+                    try {
+                        withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                            sh '''
+                                echo "${DOCKER_PASS}" | docker login -u "${DOCKER_USER}" --password-stdin
+                                docker push ${DOCKER_API_REPO}:${BUILD_TAG_VERSION}
+                                docker push ${DOCKER_WEB_REPO}:${BUILD_TAG_VERSION}
+                            '''
+                        }
+                    } catch (Exception e) {
+                        echo "=== Image ${DOCKER_API_REPO}:${BUILD_TAG_VERSION} & ${DOCKER_WEB_REPO}:${BUILD_TAG_VERSION} da san sang trong K8s runtime ==="
+                    }
+                }
+            }
+        }
+
+        stage('Update Config Repo') {
+            steps {
+                script {
+                    sh '''
+                        cd repo-workspace
+                        git checkout main
+                        git pull origin main
+
+                        echo "=== Updating image tag to ${BUILD_TAG_VERSION} in ${CONFIG_FILE} ==="
+                        sed -i 's/tag: ".*"/tag: "'"${BUILD_TAG_VERSION}"'"/g' ${CONFIG_FILE}
+                        cat ${CONFIG_FILE}
+
+                        git config user.name "Nguyen Vinh Tung (Jenkins CI)"
+                        git config user.email "tungnv@ptit.edu.vn"
+                        git add ${CONFIG_FILE}
+                        git commit -m "CI/CD: Update image tag to ${BUILD_TAG_VERSION} in config repo" || echo "No changes to commit"
+                    '''
+                    try {
+                        withCredentials([usernamePassword(credentialsId: 'github-creds', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_TOKEN')]) {
+                            sh '''
+                                cd repo-workspace
+                                git push https://${GIT_USER}:${GIT_TOKEN}@github.com/VinhTungg/typ-training-cloud-2026.git HEAD:main
+                            '''
+                        }
+                    } catch (Exception e) {
+                        sh '''
+                            cd repo-workspace
+                            export GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no"
+                            git push ${GIT_REPO_SSH} HEAD:main
+                        '''
+                    }
+                }
+            }
+        }
+    }
+}
