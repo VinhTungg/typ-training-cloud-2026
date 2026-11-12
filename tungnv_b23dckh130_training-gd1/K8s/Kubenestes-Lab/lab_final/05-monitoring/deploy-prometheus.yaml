@@ -1,0 +1,31 @@
+---
+- name: Deploy Prometheus Server Container for App Monitoring
+  hosts: localhost
+  connection: local
+  become: true
+  tasks:
+    - name: Create Prometheus configuration directory
+      file:
+        path: /etc/prometheus
+        state: directory
+        mode: "0755"
+
+    - name: Copy prometheus.yml configuration file
+      copy:
+        src: "{{ playbook_dir }}/prometheus.yml"
+        dest: /etc/prometheus/prometheus.yml
+        mode: "0644"
+
+    - name: Remove existing Prometheus container if present
+      shell: docker rm -f prometheus-server || true
+
+    - name: Run Prometheus Server container
+      shell: >
+        docker run -d
+        --name prometheus-server
+        --restart always
+        --net host
+        -v /etc/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+        prom/prometheus:v2.45.0
+        --config.file=/etc/prometheus/prometheus.yml
+        --web.listen-address=0.0.0.0:9090

@@ -1,0 +1,29 @@
+---
+- name: Deploy EFK Stack (Elasticsearch, Fluent Bit, Kibana) & Generate App Logs
+  hosts: localhost
+  connection: local
+  tasks:
+    - name: Apply kube-logging namespace
+      shell: kubectl apply -f /home/ubuntu/lab8/logging/logging_namespace.yml
+
+    - name: Deploy Elasticsearch StatefulSet and Service
+      shell: kubectl apply -f /home/ubuntu/lab8/logging/elastic_search/
+
+    - name: Deploy Fluent Bit DaemonSet, ConfigMap and RBAC
+      shell: kubectl apply -f /home/ubuntu/lab8/logging/fluent-bit/
+
+    - name: Deploy Kibana Deployment and Service
+      shell: |
+        kubectl apply -f /home/ubuntu/lab8/logging/kibana/
+        kubectl patch svc kibana -n kube-logging --type='json' -p='[{"op":"replace","path":"/spec/ports/0/nodePort","value":30601}]'
+
+    - name: Wait for EFK pods to be Ready
+      shell: kubectl wait --for=condition=Ready pod --all -n kube-logging --timeout=180s
+      ignore_errors: true
+
+    - name: Send sample HTTP requests to Web App and API Service to generate logs
+      shell: |
+        curl -s http://10.97.0.116:30880/ > /dev/null
+        curl -s -u user:user123 http://10.97.0.116:30300/api/items > /dev/null
+        curl -s -u admin:admin123 -X POST -H "Content-Type: application/json" -d '{"name":"EFK Log Test"}' http://10.97.0.116:30300/api/items > /dev/null
+        curl -s http://10.97.0.116:30300/api/items > /dev/null

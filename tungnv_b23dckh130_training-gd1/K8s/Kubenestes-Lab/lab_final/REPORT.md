@@ -67,12 +67,16 @@
 #### Hình ảnh App triển khai ArgoCD & màn hình DIFF khi phát hiện thay đổi ở Config Repo:
 ![ArgoCD App Diff](./images/03-argocd-diff.png)
 
-#### Hình ảnh App trước khi sửa code và sau khi sửa code:
-![Web App Before and After](./images/03-webapp-before-after.png)
+#### Hình ảnh App trước khi sửa code (`v1.0.0`) và sau khi sửa code (`v1.0.1`):
+- **Trước khi sửa code (`v1.0.0`):**
+![Web App Before](./images/03-webapp-before.png)
+
+- **Sau khi sửa code & chạy CI/CD (`v1.0.1`):**
+![Web App After](./images/03-webapp-after.png)
 
 ---
 
-## PHẦN 4: GIÁM SÁT HỆ THỐNG - MONITORING VỚI PROMETHEUS (1.5 ĐIỂM)
+## PHẦN 4: GIÁM SÁT HỆ THỐNG - MONITORING VỚI PROMETHEUS
 
 ### 4.1. Các file setup triển khai Prometheus
 - **Mã nguồn expose `/metrics`:** [03-app-repo/api-service/server.js](./03-app-repo/api-service/server.js) và [03-app-repo/web-app/server.js](./03-app-repo/web-app/server.js)
@@ -89,7 +93,7 @@
 
 ---
 
-## PHẦN 5: THU THẬP LOG TẬP TRUNG - LOGGING VỚI EFK STACK (1.5 ĐIỂM)
+## PHẦN 5: THU THẬP LOG TẬP TRUNG - LOGGING VỚI EFK STACK
 
 ### 5.1. Các file setup triển khai EFK Stack
 - **Cấu hình Structured Log (`request_path`, `http_method`, `response_code`):** [03-app-repo/api-service/server.js](./03-app-repo/api-service/server.js)
@@ -102,9 +106,9 @@
 
 ---
 
-## PHẦN 6: BẢO MẬT HỆ THỐNG - SECURITY (3.0 ĐIỂM)
+## PHẦN 6: BẢO MẬT HỆ THỐNG - SECURITY
 
-### 6.1. Yêu cầu 1 (1.0đ): HAProxy Load Balancer (Mode TCP) & Ingress HTTPS
+### 6.1. Yêu cầu 1: HAProxy Load Balancer (Mode TCP) & Ingress HTTPS
 - **File cấu hình HAProxy Load Balancer (Mode TCP):** [07-security/haproxy.cfg](./07-security/haproxy.cfg)
 - **File cấu hình Ingress HTTPS (Self-signed Certificate):** [03-app-repo/helm-chart/templates/ingress.yaml](./03-app-repo/helm-chart/templates/ingress.yaml)
 
@@ -113,7 +117,7 @@
 
 ---
 
-### 6.2. Yêu cầu 2 (1.0đ): Xác thực (Authentication) & Phân quyền RBAC (`user` vs `admin`)
+### 6.2. Yêu cầu 2: Xác thực (Authentication) & Phân quyền RBAC (`user` vs `admin`)
 - **Giải pháp thực hiện:** Tích hợp middleware xác thực Basic Auth / Bearer Token trong [03-app-repo/api-service/server.js](./03-app-repo/api-service/server.js):
   - Không truyền thông tin xác thực: trả về `HTTP 403 Forbidden`.
   - Role `user` (`-u user:user123`): `GET` trả về `200 OK`, `POST` / `DELETE` trả về `403 Forbidden`.
@@ -124,7 +128,7 @@
 
 ---
 
-### 6.3. Yêu cầu 3 (1.0đ): Rate Limiting (> 10 requests/phút -> HTTP 409)
+### 6.3. Yêu cầu 3: Rate Limiting (> 10 requests/phút -> HTTP 409)
 - **Giải pháp thực hiện:** Sử dụng thuật toán Sliding Window Counter (cửa sổ 60 giây, tối đa 10 requests/phút) trong [03-app-repo/api-service/server.js](./03-app-repo/api-service/server.js). Khi vượt quá 10 requests trong 1 phút, các request tiếp theo bị chặn và trả về `HTTP 409 Conflict`.
 
 #### Kết quả thử nghiệm khi gọi quá 10 requests trong 1 phút vào Endpoint của API Service:
