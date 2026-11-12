@@ -4,7 +4,7 @@ api:
   replicaCount: 1
   image:
     repository: vinhtung/cloud-final-api
-    tag: "v1.0.0"
+    tag: "v1.0.1"
     pullPolicy: IfNotPresent
   service:
     port: 3000
@@ -14,7 +14,7 @@ web:
   replicaCount: 1
   image:
     repository: vinhtung/cloud-final-web
-    tag: "v1.0.0"
+    tag: "v1.0.1"
     pullPolicy: IfNotPresent
   service:
     port: 8080
