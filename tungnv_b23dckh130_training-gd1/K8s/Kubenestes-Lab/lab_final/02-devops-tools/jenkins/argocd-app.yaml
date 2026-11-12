@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cloud-final-app
+  namespace: argocd
+spec:
+  project: default
+  sources:
+    - repoURL: https://github.com/VinhTungg/typ-training-cloud-2026.git
+      targetRevision: main
+      path: tungnv_b23dckh130_training-gd1/K8s/Kubenestes-Lab/lab_final/03-app-repo/helm-chart
+      helm:
+        valueFiles:
+          - $values/tungnv_b23dckh130_training-gd1/K8s/Kubenestes-Lab/lab_final/04-config-repo/values.yaml
+    - repoURL: https://github.com/VinhTungg/typ-training-cloud-2026.git
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: final-app
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
